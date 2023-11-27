@@ -1,0 +1,15 @@
+# Log Files
+*.log
+
+# temp directory
+tmp/
+
+# Node JS stuff and build dirs
+node_modules/
+out/
+dist/
+
+# Archives
+*.tar.gz
+*.tar
+*.zip

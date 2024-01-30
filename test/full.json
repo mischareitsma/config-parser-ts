@@ -1,0 +1,27 @@
+{
+	"name": "someName",
+	"objectArray": [
+		{
+			"name": "arrayEntry1",
+			"value": 1
+		},
+		{
+			"name": "arrayEntry2",
+			"value": 2
+		}
+	],
+	"deep": {
+		"deeper": {
+			"evenDeeper": {
+				"deepest": true
+			}
+		}
+	},
+	"canBeNull": null,
+	"true": true,
+	"false": false,
+	"int": 1,
+	"float": 3.141592653589793,
+	"string": "some nice string",
+	"array": [1, "two", 3.0]
+}

@@ -1,0 +1,2 @@
+[ ] Do a big pass on terminology: name vs key vs field.
+[ ] Rename json and jsonField etc. in the parser, should be object, objectField etc. JSON is only the string.

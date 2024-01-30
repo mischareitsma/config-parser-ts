@@ -1,3 +1,2 @@
-export function getLibName(): string {
-	return "config-parser";
-}
+export * from "./elements";
+export * from "./parser";

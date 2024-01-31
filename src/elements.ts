@@ -32,7 +32,7 @@ export abstract class ConfigElement {
 }
 
 export class ObjectElement extends ConfigElement {
-	private children: Map<string, ConfigElement>;
+	private children: Map<string, ConfigElement> = new Map();
 
 	public setChildren(children: Map<string, ConfigElement>): void {
 		this.children = children;

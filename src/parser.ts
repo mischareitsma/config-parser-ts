@@ -105,6 +105,13 @@ export class ConfigParser {
 
 	private validateObject(inputObject: unknown, ce: ObjectElement) {
 
+		if (inputObject === null) {
+			if (!ce.canBeNull()) this.addError(
+				new NullValueError(ce.getName())
+			);
+			return;
+		}
+
 		if (!ce.isCorrectType(inputObject)) {
 			this.addError(new InvalidTypeError(typeof inputObject, "object"));
 			return;
@@ -170,6 +177,13 @@ export class ConfigParser {
 
 	private validateArray(inputArray: unknown, ce: ArrayElement) {
 
+		if (inputArray === null) {
+			if (!ce.canBeNull()) this.addError(
+				new NullValueError(ce.getName())
+			);
+			return;
+		}
+
 		if (!ce.isCorrectType(inputArray)) {
 			this.addError(new InvalidTypeError(typeof inputArray, "array"));
 			return;
@@ -233,6 +247,13 @@ export class ConfigParser {
 	}
 
 	private validateBoolean(inputBool: unknown, ce: BooleanElement) {
+		if (inputBool === null) {
+			if (!ce.canBeNull()) this.addError(
+				new NullValueError(ce.getName())
+			);
+			return;
+		}
+
 		if (!ce.isCorrectType(inputBool)) {
 			this.addError(new InvalidTypeError(typeof inputBool, "boolean"));
 			return;
@@ -240,6 +261,13 @@ export class ConfigParser {
 	}
 
 	private validateNumber(inputNumber: unknown, ce: NumberElement) {
+		if (inputNumber === null) {
+			if (!ce.canBeNull()) this.addError(
+				new NullValueError(ce.getName())
+			);
+			return;
+		}
+
 		if (!ce.isCorrectType(inputNumber)) {
 			this.addError(new InvalidTypeError(typeof inputNumber, "number"));
 			return;
@@ -250,6 +278,13 @@ export class ConfigParser {
 	}
 
 	private validateString(inputString: unknown, ce: StringElement) {
+		if (inputString === null) {
+			if (!ce.canBeNull()) this.addError(
+				new NullValueError(ce.getName())
+			);
+			return;
+		}
+
 		if (!ce.isCorrectType(inputString)) {
 			this.addError(new InvalidTypeError(typeof inputString, "boolean"));
 			return;
@@ -309,11 +344,17 @@ export class MissingRequiredFieldError extends Error {
 
 export class InvalidValueError extends Error {}
 
+export class NullValueError extends InvalidValueError {
+	constructor(fieldName: string) {
+		super(`Field ${fieldName} is null, null fields not allowed`);
+	}
+}
+
 export class InvalidArrayContentsError extends Error {}
 
 export class NullArrayElementError extends InvalidArrayContentsError {
 	constructor() {
-		super("Null elements not allowed");
+		super("Null array elements not allowed");
 	}
 }
 

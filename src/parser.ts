@@ -24,7 +24,7 @@ export interface ConfigParserOptions {
 	 * all errors that occur. The {@link ConfigParser.getErrors()} method can be used to
 	 * get the list of errors that occurred.
 	 */
-	throwOnFirstError: boolean;
+	throwOnFirstError?: boolean;
 
 	/**
 	 * Prune all unknown elements. Default is **false**.
@@ -33,14 +33,13 @@ export interface ConfigParserOptions {
 	 * have a corresponding **ConfigElement**. The elements will only be pruned in case no
 	 * errors were found and a valid parsed configuration object is returned.
 	 */
-	pruneUnknownElements: boolean;
+	pruneUnknownElements?: boolean;
 }
 
 export class ConfigParser {
 
 	private errors: Error[] = [];
 	private throwOnFirstError: boolean = false;
-
 	private pruneUnknownElements: boolean = false;
 
 	private root: ConfigElement;
@@ -189,12 +188,20 @@ export class ConfigParser {
 			return;
 		}
 
-		if (ce.allowAnyElement()) return;
-
 		// The isCorrectType() call verifies that json is an object.
 		const array = inputArray as unknown[];
 
-		if (ce.getOrderedElements()) {
+		if (ce.allowAnyElement()) {
+			if (
+				!ce.allowNullElements() &&
+				array.filter(v => v === null).length > 0
+			) {
+				this.addError(new NullArrayElementError());
+			}
+			return;
+		}
+
+		if (ce.getOrderedElements().length > 0) {
 			const oe: ConfigElement[] = ce.getOrderedElements();
 			if (oe.length !== array.length) {
 				this.addError(new InvalidArrayContentsError(
@@ -215,13 +222,6 @@ export class ConfigParser {
 			});
 		}
 		else {
-			/* For tomorrow
-			Add method on ArrayElement that validates the type and returns the
-			configElement of that type, then after that we can call the
-			unknownElementValidation again. Bit of duplicate processing, but
-			this is 'fine' as this config stuff should only run at startup of
-			apps.
-			*/
 			array.forEach(elem => {
 
 				// Again null, if allowed, fits all the bills.

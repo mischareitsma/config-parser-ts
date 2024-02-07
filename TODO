@@ -1,3 +1,4 @@
 [ ] Do a big pass on terminology: name vs key vs field.
 [ ] Rename json and jsonField etc. in the parser, should be object, objectField etc. JSON is only the string.
 [ ] The null and type check can be generalized, all use properties of the ConfigElement class, and not on the specific instance.
+[ ] Refactor the check if correct ofTypeAbc() is called: Have a method called throwIfNotType(ElementType, methodName)

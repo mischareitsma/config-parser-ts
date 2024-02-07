@@ -83,26 +83,30 @@ export class ArrayElement extends ConfigElement {
 
 	private orderedElements: ConfigElement[] = [];
 
-	public allowNumberElements(ce: NumberElement) {
+	public allowNumberElements(ce?: NumberElement) {
 		this.checkOrderedElementsEmpty();
-		this.elements.set("number", ce);
+		this.elements.set("number", ce || new NumberElement());
 	}
 
-	public allowBooleanElements(ce: BooleanElement) {
-		this.elements.set("boolean", ce);
+	public allowBooleanElements(ce?: BooleanElement) {
+		this.checkOrderedElementsEmpty();
+		this.elements.set("boolean", ce || new BooleanElement());
 	}
 
-	public allowStringElements(ce: StringElement) {
-		this.elements.set("string", ce);
+	public allowStringElements(ce?: StringElement) {
+		this.checkOrderedElementsEmpty();
+		this.elements.set("string", ce || new StringElement());
 	}
 
-	public allowObjectElements(ce: ObjectElement) {
-		this.elements.set("object", ce);
+	public allowObjectElements(ce?: ObjectElement) {
+		this.checkOrderedElementsEmpty();
+		this.elements.set("object", ce || new ObjectElement());
 		
 	}
 
-	public allowArrayElements(ce: ArrayElement) {
-		this.elements.set("array", ce);
+	public allowArrayElements(ce?: ArrayElement) {
+		this.checkOrderedElementsEmpty();
+		this.elements.set("array", ce || new ArrayElement());
 	}
 
 	/**
@@ -121,7 +125,7 @@ export class ArrayElement extends ConfigElement {
 		return this.allowNull;
 	}
 
-	public setOrderedElements(orderedElements: ConfigElement[]) {
+	public setOrderedElements(...orderedElements: ConfigElement[]) {
 		if (this.elements.size > 0) {
 			throw new InvalidConfigurationElementError(
 				"ArrayElement already expects allowed element validation"
@@ -226,177 +230,316 @@ export class StringElement extends PrimitiveElement {
 
 type PrimitiveJSONType = string | number | boolean;
 
+
+export enum ElementType {
+	NUMBER = 1,
+	BOOLEAN = 2,
+	STRING = 3,
+	ARRAY = 4,
+	OBJECT = 5,
+}
+
+function isPrimitive(elementType: ElementType) {
+	return (
+		elementType === ElementType.NUMBER ||
+		elementType === ElementType.BOOLEAN ||
+		elementType === ElementType.STRING
+	);
+}
+
+/* Some refactor notes on the builder:
+Now a lot of fields on specific ConfigElements are duplicated here. We could change the builder
+such that the `ofTypeXXX()` call has to precede specific calls like `withMaxLength()`, and then
+as soon as the `ofTypeXXX()` call comes, we populate an internal ConfigElement field, and let
+the specific calls just wrap around setters etc.
+
+Might even need to just use the type, and then always just check that the type is non-zero for all
+methods calls, forcing the `ofTypeXXX()` call as very very first call! Jep.
+*/
 export class ConfigElementBuilder {
 
-	private type: number = 0;
-	private name: string;
+	private numberElement: NumberElement;
+	private booleanElement: BooleanElement;
+	private stringElement: StringElement;
+	private arrayElement: ArrayElement;
+	private objectElement: ObjectElement;
 
-	// TODO: (Mischa Reitsma) Implement array types. In case of objects, also define structure
-	// private arrayType: number = 0;
+	private type: ElementType;
 
-	private minLength: number;
-	private maxLength: number;
-	private minValue: number;
-	private maxValue: number;
-	private _canBeNull: boolean = false;
-	private _isRequired: boolean = true;
-	// TODO: (Mischa Reitsma) Could extends this to also accept JSON strings (objects) and arrays?
-	private defaultValue: PrimitiveJSONType;
-	private childElements: ConfigElement[];
+	private getConfigElement(): ConfigElement {
+		if (!this.type) 
+			throw new BuilderElementTypeUndeterminedError();
 
-	public build(): ConfigElement {
+		return this._getConfigElement();
+	}
+
+	private getPrimitiveConfigElement(): PrimitiveElement {
+		if (!isPrimitive(this.type))
+			throw new BuilderElementTypeNotPrimitiveError();
+
+		return this._getConfigElement() as PrimitiveElement;
+
+	}
+
+	private _getConfigElement(): ConfigElement {
 		switch (this.type) {
-			case 1:
-				return this.createObjectElement();
-				break;
-			case 2:
-				return this.createArrayElement();
-				break;
-			case 3:
-				return this.createBooleanElement();
-				break;
-			case 4:
-				return this.createNumberElement();
-				break;
-			case 5:
-				return this.createStringElement();
-				break;
-			default:
-				throw new Error("Undetermined or invalid element type");
+			case ElementType.OBJECT:
+				return this.objectElement;
+			case ElementType.ARRAY:
+				return this.arrayElement;
+			case ElementType.BOOLEAN:
+				return this.booleanElement;
+			case ElementType.NUMBER:
+				return this.numberElement;
+			case ElementType.STRING:
+				return this.stringElement;
 		}
 	}
 
+	public build(): ConfigElement {
+		return this.getConfigElement();
+	}
+
 	public ofTypeObject(): ConfigElementBuilder {
-		this.type = 1;
+		if (this.type)
+			throw new BuilderElementTypeDeterminedError();
+
+		this.type = ElementType.OBJECT;
+		this.objectElement = new ObjectElement();
 		return this;
 	}
 
 	public ofTypeArray(): ConfigElementBuilder {
-		this.type = 2;
+		if (this.type)
+			throw new BuilderElementTypeDeterminedError();
+
+		this.type = ElementType.ARRAY;
+		this.arrayElement = new ArrayElement();
 		return this;
 	}
 
 	public ofTypeBoolean(): ConfigElementBuilder {
-		this.type = 3;
+		if (this.type)
+			throw new BuilderElementTypeDeterminedError();
+
+		this.type = ElementType.BOOLEAN;
+		this.booleanElement = new BooleanElement();
 		return this;
 	}
 
 	public ofTypeNumber(): ConfigElementBuilder {
-		this.type = 4;
+		if (this.type)
+			throw new BuilderElementTypeDeterminedError();
+
+		this.type = ElementType.NUMBER;
+		this.numberElement = new NumberElement();
 		return this;
 	}
 
 	public ofTypeString(): ConfigElementBuilder {
-		this.type = 5;
-		return this;
-	}
+		if (this.type)
+			throw new BuilderElementTypeDeterminedError();
 
-	public withMaxLength(max: number): ConfigElementBuilder {
-		// TODO: (Mischa Reitsma) Same goes for all others below, but should we check here if the type is string? If not throw an error? Or just ignore calls that don't make sense or are unused?
-		this.maxLength = max;
+		this.type = ElementType.STRING;
+		this.stringElement = new StringElement();
 		return this;
 	}
 
 	public withMinLength(min: number): ConfigElementBuilder {
-		this.minLength = min;
+		if (!this.stringElement)
+			throw new BuilderMissingOfTypeError("ofTypeString", "withMinLength");
+
+		this.stringElement.setMinLength(min);
 		return this;
 	}
 
-	public withMaxValue(max: number): ConfigElementBuilder {
-		this.maxValue = max;
+	public withMaxLength(max: number): ConfigElementBuilder {
+		if (!this.stringElement)
+			throw new BuilderMissingOfTypeError("ofTypeString", "withMaxLength");
+
+		this.stringElement.setMaxLength(max);
 		return this;
 	}
 
 	public withMinValue(min: number): ConfigElementBuilder {
-		this.minValue = min;
+		if (!this.numberElement)
+			throw new BuilderMissingOfTypeError("ofTypeNumber", "withMinValue");
+
+		this.numberElement.setMinValue(min);
+		return this;
+	}
+
+	public withMaxValue(max: number): ConfigElementBuilder {
+		if (!this.numberElement)
+			throw new BuilderMissingOfTypeError("ofTypeNumber", "withMaxValue");
+
+		this.numberElement.setMaxValue(max);
 		return this;
 	}
 
 	public canBeNull(): ConfigElementBuilder {
-		this._canBeNull = true;
+		this.getConfigElement().setCanBeNull(true);
 		return this;
 	}
 
 	public isOptional(): ConfigElementBuilder {
-		this._isRequired = false;
+		this.getConfigElement().setIsRequired(false);
 		return this;
 	}
 
 	public withDefaultValue(value: PrimitiveJSONType) {
-		this.defaultValue = value;
+		this.getPrimitiveConfigElement().setDefaultValue(value);
 		return this;
 	}
 
 	public withChildElements(...children: ConfigElement[]): ConfigElementBuilder {
-		this.childElements = children;
+		if (!this.objectElement)
+			throw new BuilderMissingOfTypeError("ofTypeObject", "withChildElements");
+
+		this.objectElement.addChildren(...children);
+
 		return this;
 	}
 
 	public withName(name: string) {
-		this.name = name;
+		this.getConfigElement().setName(name);
 		return this;
 	}
 
-	private createObjectElement(): ObjectElement {
-		const ce = new ObjectElement();
-		this.applyCommonFields(ce);
+	public withNullArrayElements() {
+		if (!this.arrayElement)
+			throw new BuilderMissingOfTypeError("ofTypeArray", "withNullArrayElements");
 
-		if (this.childElements)
-			ce.addChildren(...this.childElements);
-
-		return ce;
+		this.arrayElement.setAllowNullElements();
+		return this;
 	}
 
-	private createArrayElement(): ArrayElement {
-		const ce = new ArrayElement();
-		this.applyCommonFields(ce);
-		return ce;
+	public withNumberArrayElements(ce?: ConfigElement) {
+		if (!this.arrayElement) {
+			throw new BuilderMissingOfTypeError(
+				"ofTypeArray",
+				"withNumberArrayElements"
+			);
+		}
+		if (ce && !(ce instanceof NumberElement))
+			throw new BuilderArrayElementTypeError("NumberElement");
+
+		this.arrayElement.allowNumberElements(ce as NumberElement);
+		return this;
 	}
 
-	private createBooleanElement(): BooleanElement {
-		const ce = new BooleanElement();
-		this.applyCommonFields(ce);
-		this.applyPrimitiveFields(ce);
-		return ce;
+	public withStringArrayElements(ce?: ConfigElement) {
+		if (!this.arrayElement) {
+			throw new BuilderMissingOfTypeError(
+				"ofTypeArray",
+				"withStringElement"
+			);
+		}
+		if (ce && !(ce instanceof StringElement))
+			throw new BuilderArrayElementTypeError("StringElement");
+
+		this.arrayElement.allowStringElements(ce as StringElement);
+		return this;
 	}
 
-	private createNumberElement(): NumberElement {
-		const ce = new NumberElement();
-		this.applyCommonFields(ce);
-		this.applyPrimitiveFields(ce);
+	public withBooleanArrayElements(ce?: ConfigElement) {
+		if (!this.arrayElement) {
+			throw new BuilderMissingOfTypeError(
+				"ofTypeArray",
+				"withBooleanArrayElements"
+			);
+		}
+		if (ce && !(ce instanceof BooleanElement))
+			throw new BuilderArrayElementTypeError("BooleanElement");
 
-		if (this.minValue)
-			ce.setMinValue(this.minValue);
-		if (this.maxValue)
-			ce.setMaxValue(this.maxValue);
-
-		return ce;
+		this.arrayElement.allowBooleanElements(ce as BooleanElement);
+		return this;
 	}
 
-	private createStringElement(): StringElement {
-		const ce = new StringElement();
-		this.applyCommonFields(ce);
-		this.applyPrimitiveFields(ce);
+	public withArrayArrayElements(ce?: ConfigElement) {
+		if (!this.arrayElement) {
+			throw new BuilderMissingOfTypeError(
+				"ofTypeArray",
+				"withArrayArrayElements"
+			);
+		}
+		if (ce && !(ce instanceof ArrayElement))
+			throw new BuilderArrayElementTypeError("ArrayElement");
 
-		if (this.minLength)
-			ce.setMinLength(this.minLength);
-		if (this.maxLength)
-			ce.setMaxLength(this.maxLength);
-
-		return ce;
+		this.arrayElement.allowArrayElements(ce as ArrayElement);
+		return this;
 	}
 
-	private applyCommonFields(ce: ConfigElement) {
-		// Name can be optional for root object or array.
-		if (this.name) ce.setName(this.name);
-		ce.setIsRequired(this._isRequired);
-		ce.setCanBeNull(this._canBeNull);
+	public withObjectArrayElements(ce?: ConfigElement) {
+		if (!this.arrayElement) {
+			throw new BuilderMissingOfTypeError(
+				"ofTypeArray",
+				"withObjectArrayElements"
+			);
+		}
+		if (ce && !(ce instanceof ObjectElement))
+			throw new BuilderArrayElementTypeError("ObjectElement");
+
+		this.arrayElement.allowObjectElements(ce as ObjectElement);
+		return this;
 	}
 
-	private applyPrimitiveFields(ce: PrimitiveElement) {
-		if (this.defaultValue)
-			ce.setDefaultValue(this.defaultValue);
+	public withArrayElementList(...elementList: ConfigElement[]) {
+		if (!this.arrayElement) {
+			throw new BuilderMissingOfTypeError(
+				"ofTypeArray",
+				"withArrayElementList"
+			);
+		}
+
+		this.arrayElement.setOrderedElements(...elementList);
+		return this;
+	}
+
+	public withAllowArrayNullElements() {
+		if (!this.arrayElement) {
+			throw new BuilderMissingOfTypeError(
+				"ofTypeArray",
+				"withAllowArrayNullElements"
+			);
+		}
+
+		this.arrayElement.setAllowNullElements();
+		return this;
 	}
 }
 
 export class InvalidConfigurationElementError extends Error {}
+
+export class ConfigElementBuilderError extends Error {}
+
+export class BuilderMissingOfTypeError extends ConfigElementBuilderError {
+	constructor(ofTypeMethod: string, actualMethod: string) {
+		super(`Call to ${ofTypeMethod}() needs to precede ${actualMethod}()`);
+	}
+}
+
+export class BuilderElementTypeUndeterminedError extends ConfigElementBuilderError {
+	constructor() {
+		super("Element type undetermined");
+	}
+}
+
+export class BuilderElementTypeDeterminedError extends ConfigElementBuilderError {
+	constructor() {
+		super("Element type already determined");
+	}
+}
+
+export class BuilderElementTypeNotPrimitiveError extends ConfigElementBuilderError {
+	constructor() {
+		super("Element type not primitive");
+	}
+}
+
+// throw BuilderArrayElementTypeError("NumberElement")
+export class BuilderArrayElementTypeError extends ConfigElementBuilderError {
+	constructor(expectedInstance: string) {
+		super(`Invalid ConfigElement instance passed, expected ${expectedInstance}`);
+	}
+}

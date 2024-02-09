@@ -60,7 +60,7 @@ export class ObjectElement extends ConfigElement {
 	}
 
 	public override isCorrectType(element: unknown): boolean {
-		return typeof element === "object";
+		return (typeof element === "object") && !Array.isArray(element);
 	}
 }
 

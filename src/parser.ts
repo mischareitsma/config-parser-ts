@@ -10,6 +10,7 @@ import {
 	ArrayElement,
 	BooleanElement,
 	ConfigElement,
+	ConfigElementType,
 	NumberElement,
 	ObjectElement,
 	StringElement
@@ -231,7 +232,8 @@ export class ConfigParser {
 					return;
 				}
 
-				let elemType = (typeof elem).toString();
+				// TODO: (Mischa Reitsma) Bit unsafe, could also support bigints for example instead of number only?
+				let elemType = (typeof elem).toString() as ConfigElementType;
 				if (elemType === "object" && Array.isArray(elem))
 					elemType = "array";
 

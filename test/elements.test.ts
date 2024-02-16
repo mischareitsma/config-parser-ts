@@ -1,10 +1,17 @@
 import {
 	ArrayElement,
 	BooleanElement,
+	BuilderArrayElementTypeError,
+	BuilderElementTypeDeterminedError,
+	BuilderElementTypeNotPrimitiveError,
+	BuilderElementTypeUndeterminedError,
+	BuilderMissingOrInvalidOfTypeError,
 	ConfigElement,
+	ConfigElementBuilder,
 	InvalidConfigurationElementError,
 	NumberElement,
 	ObjectElement,
+	PrimitiveElement,
 	StringElement,
 } from "../src/elements";
 
@@ -230,7 +237,7 @@ describe("Given an array element", () => {
 
 });
 
-describe("Given an boolean element", () => {
+describe("Given a boolean element", () => {
 
 	const currentType: string = "boolean";
 	let booleanElement: BooleanElement;
@@ -252,7 +259,7 @@ describe("Given an boolean element", () => {
 	});
 });
 
-describe("Given an number element", () => {
+describe("Given a number element", () => {
 
 	const currentType: string = "number";
 	let numberElement: NumberElement;
@@ -287,7 +294,7 @@ describe("Given an number element", () => {
 	});
 });
 
-describe("Given an string element", () => {
+describe("Given a string element", () => {
 
 	const currentType: string = "string";
 	let stringElement: StringElement;
@@ -319,5 +326,369 @@ describe("Given an string element", () => {
 		stringElement.setMaxLength(2);
 		expect(stringElement.getMaxLength()).toBe(2);
 
+	});
+});
+
+describe("given an element builder", () => {
+	test("calling build() without any other methods throws an error", () => {
+		expect(() => {
+			new ConfigElementBuilder().build();
+		}).toThrow(BuilderElementTypeUndeterminedError);
+	});
+
+	test("Calling .ofTypeObject().build() returns an ObjectElement", () => {
+		expect(new ConfigElementBuilder().ofTypeObject().build())
+			.toBeInstanceOf(ObjectElement);
+	});
+
+	test("Calling .ofTypeArray().build() returns an ArrayElement", () => {
+		expect(new ConfigElementBuilder().ofTypeArray().build())
+			.toBeInstanceOf(ArrayElement);
+	});
+
+	test("Calling .ofTypeNumber().build() returns an NumberElement", () => {
+		expect(new ConfigElementBuilder().ofTypeNumber().build())
+			.toBeInstanceOf(NumberElement);
+	});
+
+	test("Calling .ofTypeBoolean().build() returns an BooleanElement", () => {
+		expect(new ConfigElementBuilder().ofTypeBoolean().build())
+			.toBeInstanceOf(BooleanElement);
+	});
+
+	test("Calling .ofTypeString().build() returns an StringElement", () => {
+		expect(new ConfigElementBuilder().ofTypeString().build())
+			.toBeInstanceOf(StringElement);
+	});
+
+	test("Calling .ofTypeObject() with type already set throws error", () => {
+		expect(() => {
+			new ConfigElementBuilder().ofTypeString().ofTypeObject();
+		}).toThrow(BuilderElementTypeDeterminedError);
+	});
+
+	test("Calling .ofTypeArray() with type already set throws error", () => {
+		expect(() => {
+			new ConfigElementBuilder().ofTypeString().ofTypeArray();
+		}).toThrow(BuilderElementTypeDeterminedError);
+	});
+
+	test("Calling .ofTypeNumber() with type already set throws error", () => {
+		expect(() => {
+			new ConfigElementBuilder().ofTypeString().ofTypeNumber();
+		}).toThrow(BuilderElementTypeDeterminedError);
+	});
+
+	test("Calling .ofTypeBoolean() with type already set throws error", () => {
+		expect(() => {
+			new ConfigElementBuilder().ofTypeString().ofTypeBoolean();
+		}).toThrow(BuilderElementTypeDeterminedError);
+	});
+
+	test("Calling .ofTypeString() with type already set throws error", () => {
+		expect(() => {
+			new ConfigElementBuilder().ofTypeObject().ofTypeString();
+		}).toThrow(BuilderElementTypeDeterminedError);
+	});
+
+	test("withMinLength sets the minimum length of the build StringElement", () => {
+		const se: StringElement = new ConfigElementBuilder()
+			.ofTypeString().withMinLength(10).build() as StringElement;
+		expect(se.getMinLength()).toBe(10);
+	});
+
+	test("Calling .ofTypeObject().withMinLength() throws an error", () => {
+		expect(() => {
+			new ConfigElementBuilder().ofTypeObject().withMinLength(10);
+		}).toThrow(BuilderMissingOrInvalidOfTypeError);
+	});
+
+	test("withMaxLength sets the maximum length of the build StringElement", () => {
+		const se: StringElement = new ConfigElementBuilder()
+			.ofTypeString().withMaxLength(10).build() as StringElement;
+		expect(se.getMaxLength()).toBe(10);
+	});
+
+	test("Calling .ofTypeObject().withMaxLength() throws an error", () => {
+		expect(() => {
+			new ConfigElementBuilder().ofTypeObject().withMaxLength(10);
+		}).toThrow(BuilderMissingOrInvalidOfTypeError);
+	});
+
+	test("withMinValue sets the minimum value of the build NumberElement", () => {
+		const se: NumberElement = new ConfigElementBuilder()
+			.ofTypeNumber().withMinValue(10).build() as NumberElement;
+		expect(se.getMinValue()).toBe(10);
+	});
+
+	test("Calling .ofTypeObject().withMinValue() throws an error", () => {
+		expect(() => {
+			new ConfigElementBuilder().ofTypeObject().withMinValue(10);
+		}).toThrow(BuilderMissingOrInvalidOfTypeError);
+	});
+
+	test("withMaxValue sets the maximum value of the build NumberElement", () => {
+		const se: NumberElement = new ConfigElementBuilder()
+			.ofTypeNumber().withMaxValue(10).build() as NumberElement;
+		expect(se.getMaxValue()).toBe(10);
+	});
+
+	test("Calling .ofTypeObject().withMaxValue() throws an error", () => {
+		expect(() => {
+			new ConfigElementBuilder().ofTypeObject().withMaxValue(10);
+		}).toThrow(BuilderMissingOrInvalidOfTypeError);
+	});
+
+	// The following two can be tested on any element type, as it is using a method on
+	// the ConfigElement class.
+	test("Calling canBeNull() allows the element to be null", () => {
+		expect(
+			new ConfigElementBuilder().ofTypeString().canBeNull().build().canBeNull()
+		).toBe(true);
+	});
+
+	test("Calling canBeNull() allows the element to be null", () => {
+		expect(
+			new ConfigElementBuilder().ofTypeString().isOptional().build().isRequired()
+		).toBe(false);
+	});
+
+	// Following can be done on any primitive type, calling methods on the PrimitiveElement.
+	test("Calling withDefaultValue() will set a default value", () => {
+		const pe: PrimitiveElement = new ConfigElementBuilder()
+			.ofTypeString()
+			.withDefaultValue("Hi!")
+			.build() as PrimitiveElement;
+
+		expect(pe.getDefaultValue()).toBe("Hi!");
+	});
+
+	test("Calling withDefaultValue on an object type builder throws an error", () => {
+		expect(() => {
+			new ConfigElementBuilder().ofTypeObject().withDefaultValue("{\"x\": 1}");
+		}).toThrow(BuilderElementTypeNotPrimitiveError);
+	});
+
+	test("Calling withChildElements() adds child elements", () => {
+		const oe: ObjectElement = new ConfigElementBuilder().ofTypeObject()
+			.withChildElements(
+				new ConfigElementBuilder().ofTypeString().withName("s").build(),
+				new ConfigElementBuilder().ofTypeNumber().withName("x").build()
+			).build() as ObjectElement;
+		
+		const childFieldNames: string[] = oe.getChildFieldNames();
+		expect(childFieldNames).toContain("x");
+		expect(childFieldNames).toContain("s");
+	});
+
+	test("Calling ofTypeString().withChildElements() throws an error", () => {
+		expect(() => {
+			new ConfigElementBuilder().ofTypeString().withChildElements();
+		}).toThrow(BuilderMissingOrInvalidOfTypeError);
+	});
+
+	test("Calling withName() will set the name on the config element", () => {
+		expect(new ConfigElementBuilder().ofTypeString().withName("s").build().getName())
+			.toBe("s");
+	});
+
+	test("Calling withAllowArrayNullElements should set allowNullElements to true", () => {
+		const ae: ArrayElement = new ConfigElementBuilder().ofTypeArray()
+			.withAllowArrayNullElements().build() as ArrayElement;
+		expect(ae.allowNullElements()).toBe(true);
+	});
+
+	test("Calling withAllowArrayNullElements before calling ofTypeArray throws error", () => {
+		expect(() => {
+			new ConfigElementBuilder().withAllowArrayNullElements();
+		}).toThrow(BuilderMissingOrInvalidOfTypeError);
+	});
+
+	describe("Calling withNumberArrayElements", () => {
+		test("Without passing an elements should add a default number element", () => {
+			const ae: ArrayElement = new ConfigElementBuilder().ofTypeArray()
+				.withNumberArrayElements().build() as ArrayElement;
+
+			expect(ae.getElementConfig("number")).toBeDefined();
+		});
+
+		test("Passing an element should add that number element", () => {
+			const ae: ArrayElement = new ConfigElementBuilder().ofTypeArray()
+				.withNumberArrayElements(
+					new ConfigElementBuilder()
+						.ofTypeNumber()
+						.withName("num")
+						.build()
+				).build() as ArrayElement;
+
+			expect(ae.getElementConfig("number")).toBeDefined();
+			expect(ae.getElementConfig("number").getName()).toBe("num");
+		});
+
+		test("Passing a string element should throw an error", () => {
+			expect(() => {
+				new ConfigElementBuilder().ofTypeArray()
+					.withNumberArrayElements(new StringElement());
+			}).toThrow(BuilderArrayElementTypeError);
+		});
+
+		test("without calling ofTypeArray throws error", () => {
+			expect(() => {
+				new ConfigElementBuilder().withNumberArrayElements();
+			}).toThrow(BuilderMissingOrInvalidOfTypeError);
+		});
+	});
+
+	describe("Calling withStringArrayElements", () => {
+		test("Without passing an elements should add a default string element", () => {
+			const ae: ArrayElement = new ConfigElementBuilder().ofTypeArray()
+				.withStringArrayElements().build() as ArrayElement;
+
+			expect(ae.getElementConfig("string")).toBeDefined();
+		});
+
+		test("Passing an element should add that string element", () => {
+			const ae: ArrayElement = new ConfigElementBuilder().ofTypeArray()
+				.withStringArrayElements(
+					new ConfigElementBuilder()
+						.ofTypeString()
+						.withName("str")
+						.build()
+				).build() as ArrayElement;
+
+			expect(ae.getElementConfig("string")).toBeDefined();
+			expect(ae.getElementConfig("string").getName()).toBe("str");
+		});
+
+		test("Passing a string element should throw an error", () => {
+			expect(() => {
+				new ConfigElementBuilder().ofTypeArray()
+					.withStringArrayElements(new NumberElement());
+			}).toThrow(BuilderArrayElementTypeError);
+		});
+
+		test("without calling ofTypeArray throws error", () => {
+			expect(() => {
+				new ConfigElementBuilder().withStringArrayElements();
+			}).toThrow(BuilderMissingOrInvalidOfTypeError);
+		});
+	});
+
+	describe("Calling withBooleanArrayElements", () => {
+		test("Without passing an elements should add a default boolean element", () => {
+			const ae: ArrayElement = new ConfigElementBuilder().ofTypeArray()
+				.withBooleanArrayElements().build() as ArrayElement;
+
+			expect(ae.getElementConfig("boolean")).toBeDefined();
+		});
+
+		test("Passing an element should add that number element", () => {
+			const ae: ArrayElement = new ConfigElementBuilder().ofTypeArray()
+				.withBooleanArrayElements(
+					new ConfigElementBuilder()
+						.ofTypeBoolean()
+						.withName("bool")
+						.build()
+				).build() as ArrayElement;
+
+			expect(ae.getElementConfig("boolean")).toBeDefined();
+			expect(ae.getElementConfig("boolean").getName()).toBe("bool");
+		});
+
+		test("Passing a string element should throw an error", () => {
+			expect(() => {
+				new ConfigElementBuilder().ofTypeArray()
+					.withBooleanArrayElements(new StringElement());
+			}).toThrow(BuilderArrayElementTypeError);
+		});
+
+		test("without calling ofTypeArray throws error", () => {
+			expect(() => {
+				new ConfigElementBuilder().withBooleanArrayElements();
+			}).toThrow(BuilderMissingOrInvalidOfTypeError);
+		});
+	});
+
+	describe("Calling withArrayArrayElements", () => {
+		test("Without passing an elements should add a default array element", () => {
+			const ae: ArrayElement = new ConfigElementBuilder().ofTypeArray()
+				.withArrayArrayElements().build() as ArrayElement;
+
+			expect(ae.getElementConfig("array")).toBeDefined();
+		});
+
+		test("Passing an element should add that number element", () => {
+			const ae: ArrayElement = new ConfigElementBuilder().ofTypeArray()
+				.withArrayArrayElements(
+					new ConfigElementBuilder()
+						.ofTypeArray()
+						.withName("arr")
+						.build()
+				).build() as ArrayElement;
+
+			expect(ae.getElementConfig("array")).toBeDefined();
+			expect(ae.getElementConfig("array").getName()).toBe("arr");
+		});
+
+		test("Passing a string element should throw an error", () => {
+			expect(() => {
+				new ConfigElementBuilder().ofTypeArray()
+					.withArrayArrayElements(new StringElement());
+			}).toThrow(BuilderArrayElementTypeError);
+		});
+
+		test("without calling ofTypeArray throws error", () => {
+			expect(() => {
+				new ConfigElementBuilder().withArrayArrayElements();
+			}).toThrow(BuilderMissingOrInvalidOfTypeError);
+		});
+	});
+
+	describe("Calling withObjectArrayElements", () => {
+		test("Without passing an elements should add a default array element", () => {
+			const ae: ArrayElement = new ConfigElementBuilder().ofTypeArray()
+				.withObjectArrayElements().build() as ArrayElement;
+
+			expect(ae.getElementConfig("object")).toBeDefined();
+		});
+
+		test("Passing an element should add that number element", () => {
+			const ae: ArrayElement = new ConfigElementBuilder().ofTypeArray()
+				.withObjectArrayElements(
+					new ConfigElementBuilder()
+						.ofTypeObject()
+						.withName("obj")
+						.build()
+				).build() as ArrayElement;
+
+			expect(ae.getElementConfig("object")).toBeDefined();
+			expect(ae.getElementConfig("object").getName()).toBe("obj");
+		});
+
+		test("Passing a string element should throw an error", () => {
+			expect(() => {
+				new ConfigElementBuilder().ofTypeArray()
+					.withObjectArrayElements(new StringElement());
+			}).toThrow(BuilderArrayElementTypeError);
+		});
+
+		test("without calling ofTypeArray throws error", () => {
+			expect(() => {
+				new ConfigElementBuilder().withObjectArrayElements();
+			}).toThrow(BuilderMissingOrInvalidOfTypeError);
+		});
+	});
+
+	test("calling withArrayElementList sets the list", () => {
+		const ae: ArrayElement = new ConfigElementBuilder().ofTypeArray()
+			.withArrayElementList(new StringElement(), new BooleanElement())
+			.build() as ArrayElement;
+		expect(ae.getOrderedElements().length).toBe(2);
+	});
+
+	test("calling withArrayElementList without ofTypeArray throws error", () => {
+		expect(() => {
+			new ConfigElementBuilder().withArrayElementList();
+		}).toThrow(BuilderMissingOrInvalidOfTypeError);
 	});
 });

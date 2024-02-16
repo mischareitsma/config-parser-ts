@@ -1,3 +1,5 @@
+export type ConfigElementType = "string" | "number" | "boolean" | "array" | "object";
+
 export abstract class ConfigElement {
 
 	private name: string;
@@ -78,7 +80,7 @@ export class ObjectElement extends ConfigElement {
  */
 export class ArrayElement extends ConfigElement {
 
-	private elements: Map<string, ConfigElement> = new Map();
+	private elements: Map<ConfigElementType, ConfigElement> = new Map();
 	private allowNull: boolean = false;
 
 	private orderedElements: ConfigElement[] = [];
@@ -150,11 +152,11 @@ export class ArrayElement extends ConfigElement {
 		}
 	}
 
-	public isValidElementType(elemType: string): boolean {
+	public isValidElementType(elemType: ConfigElementType): boolean {
 		return this.elements.has(elemType);
 	}
 
-	public getElementConfig(elemType: string): ConfigElement {
+	public getElementConfig(elemType: ConfigElementType): ConfigElement {
 		return this.elements.get(elemType);
 	}
 }
@@ -346,32 +348,48 @@ export class ConfigElementBuilder {
 	}
 
 	public withMinLength(min: number): ConfigElementBuilder {
-		if (!this.stringElement)
-			throw new BuilderMissingOfTypeError("ofTypeString", "withMinLength");
+		if (!this.stringElement) {
+			throw new BuilderMissingOrInvalidOfTypeError(
+				"ofTypeString",
+				"withMinLength"
+			);
+		}
 
 		this.stringElement.setMinLength(min);
 		return this;
 	}
 
 	public withMaxLength(max: number): ConfigElementBuilder {
-		if (!this.stringElement)
-			throw new BuilderMissingOfTypeError("ofTypeString", "withMaxLength");
+		if (!this.stringElement) {
+			throw new BuilderMissingOrInvalidOfTypeError(
+				"ofTypeString",
+				"withMaxLength"
+			);
+		}
 
 		this.stringElement.setMaxLength(max);
 		return this;
 	}
 
 	public withMinValue(min: number): ConfigElementBuilder {
-		if (!this.numberElement)
-			throw new BuilderMissingOfTypeError("ofTypeNumber", "withMinValue");
+		if (!this.numberElement) {
+			throw new BuilderMissingOrInvalidOfTypeError(
+				"ofTypeNumber",
+				"withMinValue"
+			);
+		}
 
 		this.numberElement.setMinValue(min);
 		return this;
 	}
 
 	public withMaxValue(max: number): ConfigElementBuilder {
-		if (!this.numberElement)
-			throw new BuilderMissingOfTypeError("ofTypeNumber", "withMaxValue");
+		if (!this.numberElement) {
+			throw new BuilderMissingOrInvalidOfTypeError(
+				"ofTypeNumber",
+				"withMaxValue"
+			);
+		}
 
 		this.numberElement.setMaxValue(max);
 		return this;
@@ -393,8 +411,12 @@ export class ConfigElementBuilder {
 	}
 
 	public withChildElements(...children: ConfigElement[]): ConfigElementBuilder {
-		if (!this.objectElement)
-			throw new BuilderMissingOfTypeError("ofTypeObject", "withChildElements");
+		if (!this.objectElement) {
+			throw new BuilderMissingOrInvalidOfTypeError(
+				"ofTypeObject",
+				"withChildElements"
+			);
+		}
 
 		this.objectElement.addChildren(...children);
 
@@ -406,17 +428,9 @@ export class ConfigElementBuilder {
 		return this;
 	}
 
-	public withNullArrayElements() {
-		if (!this.arrayElement)
-			throw new BuilderMissingOfTypeError("ofTypeArray", "withNullArrayElements");
-
-		this.arrayElement.setAllowNullElements();
-		return this;
-	}
-
 	public withNumberArrayElements(ce?: ConfigElement) {
 		if (!this.arrayElement) {
-			throw new BuilderMissingOfTypeError(
+			throw new BuilderMissingOrInvalidOfTypeError(
 				"ofTypeArray",
 				"withNumberArrayElements"
 			);
@@ -430,7 +444,7 @@ export class ConfigElementBuilder {
 
 	public withStringArrayElements(ce?: ConfigElement) {
 		if (!this.arrayElement) {
-			throw new BuilderMissingOfTypeError(
+			throw new BuilderMissingOrInvalidOfTypeError(
 				"ofTypeArray",
 				"withStringElement"
 			);
@@ -444,7 +458,7 @@ export class ConfigElementBuilder {
 
 	public withBooleanArrayElements(ce?: ConfigElement) {
 		if (!this.arrayElement) {
-			throw new BuilderMissingOfTypeError(
+			throw new BuilderMissingOrInvalidOfTypeError(
 				"ofTypeArray",
 				"withBooleanArrayElements"
 			);
@@ -458,7 +472,7 @@ export class ConfigElementBuilder {
 
 	public withArrayArrayElements(ce?: ConfigElement) {
 		if (!this.arrayElement) {
-			throw new BuilderMissingOfTypeError(
+			throw new BuilderMissingOrInvalidOfTypeError(
 				"ofTypeArray",
 				"withArrayArrayElements"
 			);
@@ -472,7 +486,7 @@ export class ConfigElementBuilder {
 
 	public withObjectArrayElements(ce?: ConfigElement) {
 		if (!this.arrayElement) {
-			throw new BuilderMissingOfTypeError(
+			throw new BuilderMissingOrInvalidOfTypeError(
 				"ofTypeArray",
 				"withObjectArrayElements"
 			);
@@ -486,7 +500,7 @@ export class ConfigElementBuilder {
 
 	public withArrayElementList(...elementList: ConfigElement[]) {
 		if (!this.arrayElement) {
-			throw new BuilderMissingOfTypeError(
+			throw new BuilderMissingOrInvalidOfTypeError(
 				"ofTypeArray",
 				"withArrayElementList"
 			);
@@ -498,7 +512,7 @@ export class ConfigElementBuilder {
 
 	public withAllowArrayNullElements() {
 		if (!this.arrayElement) {
-			throw new BuilderMissingOfTypeError(
+			throw new BuilderMissingOrInvalidOfTypeError(
 				"ofTypeArray",
 				"withAllowArrayNullElements"
 			);
@@ -513,7 +527,7 @@ export class InvalidConfigurationElementError extends Error {}
 
 export class ConfigElementBuilderError extends Error {}
 
-export class BuilderMissingOfTypeError extends ConfigElementBuilderError {
+export class BuilderMissingOrInvalidOfTypeError extends ConfigElementBuilderError {
 	constructor(ofTypeMethod: string, actualMethod: string) {
 		super(`Call to ${ofTypeMethod}() needs to precede ${actualMethod}()`);
 	}

@@ -1,0 +1,37 @@
+name: "Test a new build"
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - 'main'
+
+permissions:
+  contents: read
+
+jobs:
+  compile-lint-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Checkout project'
+        uses: actions/checkout@v4
+
+      - name: 'Setup node 21.1.x'
+        uses: actions/setup-node@v3
+        with:
+          node-version: 21.1.x
+          cache: npm
+
+      - name: 'Clean install project'
+        run: npm ci
+
+      - name: 'Run eslint'
+        run: npm run lint
+
+      - name: 'Compile project'
+        run: npm run compile
+
+      - name: 'Run all tests'
+        run: npm run test

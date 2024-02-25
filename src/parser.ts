@@ -50,11 +50,8 @@ export class ConfigParser {
 
 		if (!options) return;
 
-		if (options.pruneUnknownElements)
-			this.pruneUnknownElements = options.pruneUnknownElements;
-
-		if (options.throwOnFirstError)
-			this.throwOnFirstError = options.throwOnFirstError;
+		this.pruneUnknownElements = !!options.pruneUnknownElements;
+		this.throwOnFirstError = !!options.throwOnFirstError;
 	}
 
 	public parse(jsonString: string): unknown {

@@ -7,10 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## Added
+## [0.2.0] - 2024-02-26
+
+### Added
 
 - Documentation on all public methods and classes.
-- Documentation on how to use the package in the README
+- Documentation on how to use the package in the README.
 
 ## [0.1.0] - 2024-02-20
 
@@ -18,5 +20,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial version of configuration parser.
 
-[Unreleased]: https://github.com/mischareitsma/config-parser-ts/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/mischareitsma/config-parser-ts/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/mischareitsma/config-parser-ts/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/mischareitsma/config-parser-ts/releases/tag/v0.1.0

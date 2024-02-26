@@ -550,6 +550,17 @@ Might even need to just use the type, and then always just check that the type i
 methods calls, forcing the `ofTypeXyz()` call as very very first call! Jep.
 */
 
+/**
+ * Configuration Element Builder
+ * 
+ * The ConfigurationElementBuilder class is used to create ConfigElements using a builder pattern.
+ * The first call should always be **ofTypeXyz()**, as all the other methods need to know which
+ * ConfigElement is being build. All methods therefore can throw the
+ * **BuilderElementTypeUndeterminedError** error.
+ * 
+ * Methods that only apply for one specific type of element will throw errors in case the method
+ * is called and that type is not currently being build.
+ */
 export class ConfigElementBuilder {
 
 	private numberElement: NumberElement;
@@ -590,10 +601,21 @@ export class ConfigElementBuilder {
 		}
 	}
 
+	/**
+	 * Build the specific ConfigElement.
+	 * 
+	 * @returns The ConfigElement instance
+	 */
 	public build(): ConfigElement {
 		return this.getConfigElement();
 	}
 
+	/**
+	 * The current builder is building an ObjectElement.
+	 * 
+	 * @returns The current ConfigElementBuilder instance.
+	 * @throws BuilderElementTypeDeterminedError
+	 */
 	public ofTypeObject(): ConfigElementBuilder {
 		if (this.type)
 			throw new BuilderElementTypeDeterminedError();
@@ -603,6 +625,12 @@ export class ConfigElementBuilder {
 		return this;
 	}
 
+	/**
+	 * The current builder is building an ArrayElement.
+	 * 
+	 * @returns The current ConfigElementBuilder instance.
+	 * @throws BuilderElementTypeDeterminedError
+	 */
 	public ofTypeArray(): ConfigElementBuilder {
 		if (this.type)
 			throw new BuilderElementTypeDeterminedError();
@@ -612,6 +640,12 @@ export class ConfigElementBuilder {
 		return this;
 	}
 
+	/**
+	 * The current builder is building a BooleanElement.
+	 * 
+	 * @returns The current ConfigElementBuilder instance.
+	 * @throws BuilderElementTypeDeterminedError
+	 */
 	public ofTypeBoolean(): ConfigElementBuilder {
 		if (this.type)
 			throw new BuilderElementTypeDeterminedError();
@@ -621,6 +655,12 @@ export class ConfigElementBuilder {
 		return this;
 	}
 
+	/**
+	 * The current builder is building a NumberElement.
+	 * 
+	 * @returns The current ConfigElementBuilder instance.
+	 * @throws BuilderElementTypeDeterminedError
+	 */
 	public ofTypeNumber(): ConfigElementBuilder {
 		if (this.type)
 			throw new BuilderElementTypeDeterminedError();
@@ -630,6 +670,12 @@ export class ConfigElementBuilder {
 		return this;
 	}
 
+	/**
+	 * The current builder is building a StringElement.
+	 * 
+	 * @returns The current ConfigElementBuilder instance.
+	 * @throws BuilderElementTypeDeterminedError
+	 */
 	public ofTypeString(): ConfigElementBuilder {
 		if (this.type)
 			throw new BuilderElementTypeDeterminedError();
@@ -639,6 +685,14 @@ export class ConfigElementBuilder {
 		return this;
 	}
 
+	/**
+	 * For StringElement items set the minimum length the string should have.
+	 * 
+	 * @param min Minimum length of the string.
+	 * @returns The current ConfigElementBuilder instance.
+	 * @throws BuilderMissingOrInvalidOfTypeError: Method called before calling
+	 *         **ofTypeString()**.
+	 */
 	public withMinLength(min: number): ConfigElementBuilder {
 		if (!this.stringElement) {
 			throw new BuilderMissingOrInvalidOfTypeError(
@@ -650,6 +704,15 @@ export class ConfigElementBuilder {
 		this.stringElement.setMinLength(min);
 		return this;
 	}
+
+	/**
+	 * For StringElement items set the maximum length the string can have.
+	 * 
+	 * @param max Maximum length of the string.
+	 * @returns The current ConfigElementBuilder instance.
+	 * @throws BuilderMissingOrInvalidOfTypeError: Method called before calling
+	 *         **ofTypeString()**.
+	 */
 
 	public withMaxLength(max: number): ConfigElementBuilder {
 		if (!this.stringElement) {
@@ -663,6 +726,14 @@ export class ConfigElementBuilder {
 		return this;
 	}
 
+	/**
+	 * For NumberElement items set the minimum value the number should have.
+	 * 
+	 * @param min Minimum value of the number.
+	 * @returns The current ConfigElementBuilder instance.
+	 * @throws BuilderMissingOrInvalidOfTypeError: Method called before calling
+	 *         **ofTypeNumber()**.
+	 */
 	public withMinValue(min: number): ConfigElementBuilder {
 		if (!this.numberElement) {
 			throw new BuilderMissingOrInvalidOfTypeError(
@@ -675,6 +746,14 @@ export class ConfigElementBuilder {
 		return this;
 	}
 
+	/**
+	 * For NumberElement items set the maximum value the number can have.
+	 * 
+	 * @param max Maximum value of the number.
+	 * @returns The current ConfigElementBuilder instance.
+	 * @throws BuilderMissingOrInvalidOfTypeError: Method called before calling
+	 *         **ofTypeNumber()**.
+	 */
 	public withMaxValue(max: number): ConfigElementBuilder {
 		if (!this.numberElement) {
 			throw new BuilderMissingOrInvalidOfTypeError(
@@ -687,21 +766,48 @@ export class ConfigElementBuilder {
 		return this;
 	}
 
+	/**
+	 * Allow the value of the ConfigElement to be **null**.
+	 * 
+	 * @returns The current ConfigElementBuilder instance.
+	 */
 	public canBeNull(): ConfigElementBuilder {
 		this.getConfigElement().setCanBeNull(true);
 		return this;
 	}
 
+	/**
+	 * Make the ConfigElement optional.
+	 * 
+	 * @returns The current ConfigElementBuilder instance.
+	 */
 	public isOptional(): ConfigElementBuilder {
 		this.getConfigElement().setIsRequired(false);
 		return this;
 	}
 
+	/**
+	 * For the primitive types, set a default value.
+	 * 
+	 * @param value The default value to use.
+	 * @returns The current ConfigElementBuilder instance.
+	 */
 	public withDefaultValue(value: PrimitiveJSONType) {
 		this.getPrimitiveConfigElement().setDefaultValue(value);
 		return this;
 	}
 
+	/**
+	 * Add all child elements that are passed to as child elements to an ObjectElement.
+	 * 
+	 * This method will call the {@link ObjectElement.addChildren()} method to add elements
+	 * rather than replace them all.
+	 * 
+	 * @param children Array of child ConfigElement instances.
+	 * @returns The current ConfigElementBuilder instance.
+	 * @throws BuilderMissingOrInvalidOfTypeError: Method called before calling
+	 *         **ofTypeObject()**.
+	 */
 	public withChildElements(...children: ConfigElement[]): ConfigElementBuilder {
 		if (!this.objectElement) {
 			throw new BuilderMissingOrInvalidOfTypeError(
@@ -715,11 +821,29 @@ export class ConfigElementBuilder {
 		return this;
 	}
 
+	/**
+	 * Set the name or the key of the ConfigElement.
+	 * 
+	 * @param name The name or key of the configuration element.
+	 * @returns The current ConfigElementBuilder instance.
+	 */
 	public withName(name: string) {
 		this.getConfigElement().setName(name);
 		return this;
 	}
 
+	/**
+	 * Allow number elements to be elements of the array element.
+	 * 
+	 * This method accepts a ConfigElement, but does a check on the type and throws errors
+	 * in case any other type of ConfigElement is supplied.
+	 * 
+	 * @param ce An optional NumberElement instance to allow in the array.
+	 * @returns The current ConfigElementBuilder instance.
+	 * @throws BuilderMissingOrInvalidOfTypeError: Method called before calling
+	 *         **ofTypeArray()**.
+	 * @throws BuilderArrayElementTypeError: Incorrect type of the supplied ConfigElement.
+	 */
 	public withNumberArrayElements(ce?: ConfigElement) {
 		if (!this.arrayElement) {
 			throw new BuilderMissingOrInvalidOfTypeError(
@@ -734,6 +858,18 @@ export class ConfigElementBuilder {
 		return this;
 	}
 
+	/**
+	 * Allow string elements to be elements of the array element.
+	 * 
+	 * This method accepts a ConfigElement, but does a check on the type and throws errors
+	 * in case any other type of ConfigElement is supplied.
+	 * 
+	 * @param ce An optional StringElement instance to allow in the array.
+	 * @returns The current ConfigElementBuilder instance.
+	 * @throws BuilderMissingOrInvalidOfTypeError: Method called before calling
+	 *         **ofTypeArray()**.
+	 * @throws BuilderArrayElementTypeError: Incorrect type of the supplied ConfigElement.
+	 */
 	public withStringArrayElements(ce?: ConfigElement) {
 		if (!this.arrayElement) {
 			throw new BuilderMissingOrInvalidOfTypeError(
@@ -748,6 +884,18 @@ export class ConfigElementBuilder {
 		return this;
 	}
 
+	/**
+	 * Allow boolean elements to be elements of the array element.
+	 * 
+	 * This method accepts a ConfigElement, but does a check on the type and throws errors
+	 * in case any other type of ConfigElement is supplied.
+	 * 
+	 * @param ce An optional BooleanElement instance to allow in the array.
+	 * @returns The current ConfigElementBuilder instance.
+	 * @throws BuilderMissingOrInvalidOfTypeError: Method called before calling
+	 *         **ofTypeArray()**.
+	 * @throws BuilderArrayElementTypeError: Incorrect type of the supplied ConfigElement.
+	 */
 	public withBooleanArrayElements(ce?: ConfigElement) {
 		if (!this.arrayElement) {
 			throw new BuilderMissingOrInvalidOfTypeError(
@@ -762,6 +910,18 @@ export class ConfigElementBuilder {
 		return this;
 	}
 
+	/**
+	 * Allow array elements to be elements of the array element.
+	 * 
+	 * This method accepts a ConfigElement, but does a check on the type and throws errors
+	 * in case any other type of ConfigElement is supplied.
+	 * 
+	 * @param ce An optional ArrayElement instance to allow in the array.
+	 * @returns The current ConfigElementBuilder instance.
+	 * @throws BuilderMissingOrInvalidOfTypeError: Method called before calling
+	 *         **ofTypeArray()**.
+	 * @throws BuilderArrayElementTypeError: Incorrect type of the supplied ConfigElement.
+	 */
 	public withArrayArrayElements(ce?: ConfigElement) {
 		if (!this.arrayElement) {
 			throw new BuilderMissingOrInvalidOfTypeError(
@@ -776,6 +936,18 @@ export class ConfigElementBuilder {
 		return this;
 	}
 
+	/**
+	 * Allow object elements to be elements of the array element.
+	 * 
+	 * This method accepts a ConfigElement, but does a check on the type and throws errors
+	 * in case any other type of ConfigElement is supplied.
+	 * 
+	 * @param ce An optional ObjectElement instance to allow in the array.
+	 * @returns The current ConfigElementBuilder instance.
+	 * @throws BuilderMissingOrInvalidOfTypeError: Method called before calling
+	 *         **ofTypeArray()**.
+	 * @throws BuilderArrayElementTypeError: Incorrect type of the supplied ConfigElement.
+	 */
 	public withObjectArrayElements(ce?: ConfigElement) {
 		if (!this.arrayElement) {
 			throw new BuilderMissingOrInvalidOfTypeError(
@@ -790,6 +962,14 @@ export class ConfigElementBuilder {
 		return this;
 	}
 
+	/**
+	 * Set the ordered list of expected array elements.
+	 * 
+	 * @param elementList The ordered element list of expected array elements.
+	 * @returns The current ConfigElementBuilder instance.
+	 * @throws BuilderMissingOrInvalidOfTypeError: Method called before calling
+	 *         **ofTypeArray()**.
+	 */
 	public withArrayElementList(...elementList: ConfigElement[]) {
 		if (!this.arrayElement) {
 			throw new BuilderMissingOrInvalidOfTypeError(
@@ -802,6 +982,13 @@ export class ConfigElementBuilder {
 		return this;
 	}
 
+	/**
+	 * Allow **null** values in an ArrayElement.
+	 * 
+	 * @returns The current ConfigElementBuilder instance.
+	 * @throws BuilderMissingOrInvalidOfTypeError: Method called before calling
+	 *         **ofTypeArray()**.
+	 */
 	public withAllowArrayNullElements() {
 		if (!this.arrayElement) {
 			throw new BuilderMissingOrInvalidOfTypeError(
@@ -814,6 +1001,8 @@ export class ConfigElementBuilder {
 		return this;
 	}
 }
+
+// TODO: (Mischa Reitsma) The errors need another pass. Could have very specific types for everything, or make the types a bit simpler but have a clear message. Now it is a bit of both.
 
 export class InvalidConfigurationElementError extends Error {}
 

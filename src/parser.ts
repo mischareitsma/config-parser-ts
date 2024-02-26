@@ -16,6 +16,12 @@ import {
 	StringElement
 } from "./elements";
 
+/**
+ * Configuration parser options.
+ * 
+ * This interface has all the options that can be used when creating a {@link ConfigParser}
+ * instance.
+ */
 export interface ConfigParserOptions {
 	/**
 	 * Throw an error when the first error occurs. Default is **false**.
@@ -45,6 +51,12 @@ export class ConfigParser {
 
 	private root: ConfigElement;
 
+	/**
+	 * Creates a ConfigParser instance.
+	 * 
+	 * @param root The root element that is used to validate the parsed configuration.
+	 * @param options Configuration parser options
+	 */
 	constructor(root: ConfigElement, options?: ConfigParserOptions) {
 		this.root = root;
 
@@ -54,6 +66,19 @@ export class ConfigParser {
 		this.throwOnFirstError = !!options.throwOnFirstError;
 	}
 
+	/**
+	 * Parse a JSON string and returns the object representation of that JSON string. Depending
+	 * on the options, unknown elements can be pruned from the object.
+	 * 
+	 * In case the option to throw on the first error is set, the actual validation error is
+	 * thrown. If the option is not set to true, a ConfigParseFailureError will be thrown, and
+	 * the {@link getErrors()} method can be used to get the list of errors that was encountered
+	 * during parsing.
+	 * 
+	 * @param jsonString The JSON string to parse.
+	 * @returns An object representation of the passed JSON string.
+	 * @throws ConfigParseFailureError: Failed to parse configuration.
+	 */
 	public parse(jsonString: string): unknown {
 		const json = JSON.parse(jsonString);
 		this.validate(json);
@@ -316,6 +341,11 @@ export class ConfigParser {
 		if (this.throwOnFirstError) throw error;
 	}
 
+	/**
+	 * Get the list of Error objects that were thrown during the validation.
+	 * 
+	 * @returns The list of validation errors.
+	 */
 	public getErrors(): Error[] {
 		return [...this.errors];
 	}

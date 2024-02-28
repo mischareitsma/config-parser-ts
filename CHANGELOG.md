@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Automatically ignore and prune any key on an ObjectElement that starts with
+  the **$** sign, as these normally contain meta-data like comments or schema
+  links.
+
 ## [0.3.0] - 2024-02-28
 
 ### Added

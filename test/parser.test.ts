@@ -6,7 +6,8 @@ import {
 		ConfigElement,
 		ElementType,
 		NumberElement,
-		StringElement
+		StringElement,
+		ObjectElement
 } from "../src/elements";
 import {
 	ConfigParseFailureError,
@@ -972,5 +973,33 @@ describe("Config with a single array", () => {
 		expect(result.arr[1]).toBe("2");
 		expect(result.arr[2]).toBe(true);
 		// TODO: (Mischa Reitsma) Maybe assert last 2 as well
+	});
+});
+
+describe("Parsing config with $comment fields", () => {
+	const json: string = JSON.stringify({x: 1, "$comment": "some comment"});
+	const root: ObjectElement = new ConfigElementBuilder().ofTypeObject().withChildElements(
+		new ConfigElementBuilder().ofTypeNumber().withName("x").build()
+	).build() as ObjectElement;
+
+	test("With not specifying to prune does prune", () => {
+		const parser: ConfigParser = new ConfigParser(root);
+		const result: object = parser.parse(json) as object;
+		expect("x" in result).toBe(true);
+		expect("$comment" in result).toBe(false);
+	});
+
+	test("With specifying to prune does prune", () => {
+		const parser: ConfigParser = new ConfigParser(root, {pruneDollarElements: true});
+		const result: object = parser.parse(json) as object;
+		expect("x" in result).toBe(true);
+		expect("$comment" in result).toBe(false);
+	});
+
+	test("With specifying to not prune does not prune", () => {
+		const parser: ConfigParser = new ConfigParser(root, {pruneDollarElements: false});
+		const result: object = parser.parse(json) as object;
+		expect("x" in result).toBe(true);
+		expect("$comment" in result).toBe(true);
 	});
 });

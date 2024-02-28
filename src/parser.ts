@@ -41,6 +41,17 @@ export interface ConfigParserOptions {
 	 * errors were found and a valid parsed configuration object is returned.
 	 */
 	pruneUnknownElements?: boolean;
+
+	/**
+	 * Prune all elements that as a key start with a $.
+	 * 
+	 * If set to **true**, the parser will ignore and prune all the elements for which the
+	 * key starts with the $-sign. These are normally used for things like comments or the
+	 * JSON schema location, and act as meta-data. Note that if these elements are not
+	 * configured, and {@link pruneUnknownElements} is set to **true**, the same effect will
+	 * be achieved. The default value for this setting is **true**.
+	 */
+	pruneDollarElements?: boolean;
 }
 
 export class ConfigParser {
@@ -48,6 +59,7 @@ export class ConfigParser {
 	private errors: Error[] = [];
 	private throwOnFirstError: boolean = false;
 	private pruneUnknownElements: boolean = false;
+	private pruneDollarElements: boolean = true;
 
 	private root: ConfigElement;
 
@@ -64,6 +76,8 @@ export class ConfigParser {
 
 		this.pruneUnknownElements = !!options.pruneUnknownElements;
 		this.throwOnFirstError = !!options.throwOnFirstError;
+		if (options.pruneDollarElements !== undefined)
+			this.pruneDollarElements = options.pruneDollarElements;
 	}
 
 	/**
@@ -152,9 +166,16 @@ export class ConfigParser {
 		*/
 		const jsonFields: string[] = [];
 
+		/**
+		 * An array of all the fields for which the key starts with a $-sign. Populated in
+		 * the same **for (const field in json)** loop.
+		 */
+		const dollarFields: string[] = [];
+
 		for (const field in json) {
 			jsonFields.push(field);
 			if (requiredFields.includes(field)) requiredFieldsFound.push(field);
+			if (field.startsWith("$")) dollarFields.push(field);
 		}
 
 		/**
@@ -179,6 +200,13 @@ export class ConfigParser {
 		if (this.pruneUnknownElements && !this.errors.length) {
 			extraFields.forEach(f => {
 				// @ts-expect-error See extraFields description.
+				delete json[f];
+			});
+		}
+
+		if (this.pruneDollarElements) {
+			dollarFields.forEach(f => {
+				// @ts-expect-error See dollarFields description.
 				delete json[f];
 			});
 		}

@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2024-02-28
+
+### Added
+
+- For StringElements add an optional list of valid values the string element
+  can have.
+
 ## [0.2.0] - 2024-02-26
 
 ### Added
@@ -20,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial version of configuration parser.
 
-[Unreleased]: https://github.com/mischareitsma/config-parser-ts/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/mischareitsma/config-parser-ts/compare/v0.3.0...HEAD
+[0.2.0]: https://github.com/mischareitsma/config-parser-ts/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/mischareitsma/config-parser-ts/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/mischareitsma/config-parser-ts/releases/tag/v0.1.0

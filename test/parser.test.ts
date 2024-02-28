@@ -307,6 +307,30 @@ describe("Config with a single string", () => {
 		});
 	});
 
+	describe("With an array of valid values", () => {
+		beforeEach(() => {
+			parser = getParserWithRootAndChildren(
+				new ConfigElementBuilder()
+					.ofTypeString()
+					.withName("x")
+					.withValidStringValues("hi", "bye")
+					.build()
+			);
+		});
+
+		test("Should throw an error in case value is not valid", () => {
+			expect(() => parser.parse("{\"x\": \"Hello\"}")).toThrow(
+				ConfigParseFailureError
+			);
+			expect(getErrorsOfType(parser, InvalidValueError)).toHaveLength(1);
+		});
+
+		test.each(["hi", "bye"])("Should parse with value %s", (value) => {
+			const result: Result = parser.parse(`{"x": "${value}"}`) as Result;
+			expect(result.x).toBe(value);
+		});
+	});
+
 	describe("With string value being NULL", () => {
 
 		const json: string = "{\"x\": null}";

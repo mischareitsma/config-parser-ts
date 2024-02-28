@@ -325,7 +325,15 @@ describe("Given a string element", () => {
 		expect(stringElement.getMaxLength()).toBeUndefined();
 		stringElement.setMaxLength(2);
 		expect(stringElement.getMaxLength()).toBe(2);
+	});
 
+	test("get/set valid values", () => {
+		expect(stringElement.getValidValues()).toHaveLength(0);
+		stringElement.addValidValues("hi", "there");
+		const validValues: string[] = stringElement.getValidValues();
+		expect(validValues).toHaveLength(2);
+		expect(validValues[0]).toBe("hi");
+		expect(validValues[1]).toBe("there");
 	});
 });
 
@@ -415,10 +423,27 @@ describe("given an element builder", () => {
 		}).toThrow(BuilderMissingOrInvalidOfTypeError);
 	});
 
+	test("withValidStringValues sets the valid values for a StringElement", () => {
+		const se: StringElement = new ConfigElementBuilder()
+			.ofTypeString().withValidStringValues("hi", "bye").build() as StringElement;
+		
+		const validValues: string[] = se.getValidValues();
+		expect(validValues).toHaveLength(2);
+		expect(validValues[0]).toBe("hi");
+		expect(validValues[1]).toBe("bye");
+	});
+
+	test("Calling .ofTypeObject().withValidStringValues() throws an error", () => {
+		expect(() => {
+			new ConfigElementBuilder().ofTypeObject()
+				.withValidStringValues("hi", "bye");
+		}).toThrow(BuilderMissingOrInvalidOfTypeError);
+	});
+
 	test("withMinValue sets the minimum value of the build NumberElement", () => {
-		const se: NumberElement = new ConfigElementBuilder()
+		const ne: NumberElement = new ConfigElementBuilder()
 			.ofTypeNumber().withMinValue(10).build() as NumberElement;
-		expect(se.getMinValue()).toBe(10);
+		expect(ne.getMinValue()).toBe(10);
 	});
 
 	test("Calling .ofTypeObject().withMinValue() throws an error", () => {
@@ -428,9 +453,9 @@ describe("given an element builder", () => {
 	});
 
 	test("withMaxValue sets the maximum value of the build NumberElement", () => {
-		const se: NumberElement = new ConfigElementBuilder()
+		const ne: NumberElement = new ConfigElementBuilder()
 			.ofTypeNumber().withMaxValue(10).build() as NumberElement;
-		expect(se.getMaxValue()).toBe(10);
+		expect(ne.getMaxValue()).toBe(10);
 	});
 
 	test("Calling .ofTypeObject().withMaxValue() throws an error", () => {

@@ -310,11 +310,20 @@ export class ConfigParser {
 		}
 
 		if (!ce.isCorrectType(inputString)) {
-			this.addError(new InvalidTypeError(typeof inputString, "boolean"));
+			this.addError(new InvalidTypeError(typeof inputString, "string"));
 			return;
 		}
 
 		const s = inputString as string;
+
+		const validValues = ce.getValidValues();
+		if ((validValues.length > 0) && !validValues.includes(s)) {
+			this.addError(new InvalidValueError(
+				`Invalid value ${s}, valid values: ${validValues.toString()}`
+			));
+			return;
+		}
+
 		this.checkRange(s.length, ce.getMinLength(), ce.getMaxLength());
 	}
 

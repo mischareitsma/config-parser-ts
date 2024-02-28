@@ -473,6 +473,8 @@ export class StringElement extends PrimitiveElement {
 	private minLength: number;
 	private maxLength: number;
 
+	private validValues: string[] = [];
+
 	/**
 	 * Set the minimum length the string element should have.
 	 * 
@@ -507,6 +509,24 @@ export class StringElement extends PrimitiveElement {
 	 */
 	public getMaxLength(): number {
 		return this.maxLength;
+	}
+
+	/**
+	 * Add values to a list of allowed values for this string configuration element.
+	 * 
+	 * @param values Values that are valid for this StringElement
+	 */
+	public addValidValues(...values: string[]) {
+		this.validValues.push(...values);
+	}
+
+	/**
+	 * Get an array with all the valid value of this string configuration element.
+	 * 
+	 * @returns An array of all valid values
+	 */
+	public getValidValues(): string[] {
+		return [...this.validValues];
 	}
 
 	/**
@@ -723,6 +743,23 @@ export class ConfigElementBuilder {
 		}
 
 		this.stringElement.setMaxLength(max);
+		return this;
+	}
+
+	/**
+	 * Add valid values for a StringElement.
+	 * 
+	 * @param values Valid values for the string.
+	 * @returns The current ConfigElementBuilder.
+	 */
+	public withValidStringValues(...values: string[]): ConfigElementBuilder {
+		if (!this.stringElement) {
+			throw new BuilderMissingOrInvalidOfTypeError(
+				"ofTypeString",
+				"withValidStringValues"
+			);
+		}
+		this.stringElement.addValidValues(...values);
 		return this;
 	}
 

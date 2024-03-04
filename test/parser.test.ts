@@ -7,7 +7,10 @@ import {
 		ElementType,
 		NumberElement,
 		StringElement,
-		ObjectElement
+		BooleanElement,
+		ObjectElement,
+		ElementValidator,
+		ArrayElement
 } from "../src/elements";
 import {
 	ConfigParseFailureError,
@@ -19,8 +22,11 @@ import {
 	MissingRequiredFieldError,
 	NullArrayElementError,
 	NullValueError,
+	ValidationError,
 } from "../src/parser";
 
+// Error type for testing purpose.
+class TestError extends Error {}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getErrorsOfType(parser: ConfigParser, errorType: any) {
@@ -193,6 +199,42 @@ describe("Config with a single number", () => {
 			expect(result.x).toBeUndefined();
 		});
 
+	});
+
+	describe("With a custom validator", () => {
+		const validator: ElementValidator<number> = {
+			validate: (ce: ConfigElement, val: number) => {
+				if (val === 0)
+					throw new TestError("Test");
+			
+				return val === 1;
+			}
+		};
+
+		const numberElement: NumberElement = new ConfigElementBuilder()
+			.ofTypeNumber()
+			.withName("x")
+			.withValidators(validator)
+			.build() as NumberElement;
+
+		test("That is successful parses correctly", () => {
+			const parser: ConfigParser = getParserWithRootAndChildren(numberElement);
+			const result: Result = parser.parse("{\"x\": 1}") as Result;
+			expect(result.x).toBe(1);
+		});
+
+
+		test("That throws an error stores that error", () => {
+			const parser: ConfigParser = getParserWithRootAndChildren(numberElement);
+			expect(() => parser.parse("{\"x\": 0}")).toThrow(ConfigParseFailureError);
+			expect(getErrorsOfType(parser, TestError)).toHaveLength(1);
+		});
+
+		test("That throws an error stores that error", () => {
+			const parser: ConfigParser = getParserWithRootAndChildren(numberElement);
+			expect(() => parser.parse("{\"x\": 2}")).toThrow(ConfigParseFailureError);
+			expect(getErrorsOfType(parser, ValidationError)).toHaveLength(1);
+		});
 	});
 });
 
@@ -385,7 +427,44 @@ describe("Config with a single string", () => {
 			const result: Result = parser.parse("{}") as Result;
 			expect(result.x).toBeUndefined();
 		});
+	});
 
+	describe("With a custom validator", () => {
+		const validator: ElementValidator<string> = {
+			validate: (ce: ConfigElement, val: string) => {
+				if (val === "throw")
+					throw new TestError("Test");
+			
+				return val === "correct";
+			}
+		};
+
+		const stringElement: StringElement = new ConfigElementBuilder()
+			.ofTypeString()
+			.withName("x")
+			.withValidators(validator)
+			.build() as StringElement;
+
+		test("That is successful parses correctly", () => {
+			const parser: ConfigParser = getParserWithRootAndChildren(stringElement);
+			const result: Result = parser.parse("{\"x\": \"correct\"}") as Result;
+			expect(result.x).toBe("correct");
+		});
+
+
+		test("That throws an error stores that error", () => {
+			const parser: ConfigParser = getParserWithRootAndChildren(stringElement);
+			expect(() => parser.parse("{\"x\": \"throw\"}"))
+				.toThrow(ConfigParseFailureError);
+			expect(getErrorsOfType(parser, TestError)).toHaveLength(1);
+		});
+
+		test("That throws an error stores that error", () => {
+			const parser: ConfigParser = getParserWithRootAndChildren(stringElement);
+			expect(() => parser.parse("{\"x\": \"incorrect\"}"))
+				.toThrow(ConfigParseFailureError);
+			expect(getErrorsOfType(parser, ValidationError)).toHaveLength(1);
+		});
 	});
 });
 
@@ -457,6 +536,61 @@ describe("Config with a single boolean", () => {
 			expect(result.x).toBeUndefined();
 		});
 	});
+
+	describe("With a custom validator", () => {
+		const validator: ElementValidator<boolean> = {
+			validate: (ce: ConfigElement, val: boolean) => {
+				return val;
+			}
+		};
+
+		const validatorThrowOnTrue: ElementValidator<boolean> = {
+			validate: (ce: ConfigElement, val: boolean) => {
+				if (val)
+					throw new TestError("Test");
+			
+				return val;
+			}
+		};
+
+		const booleanElement: BooleanElement = new ConfigElementBuilder()
+			.ofTypeBoolean()
+			.withName("x")
+			.canBeNull()
+			.withValidators(validator)
+			.build() as BooleanElement;
+
+		const booleanElementTestError: BooleanElement = new ConfigElementBuilder()
+			.ofTypeBoolean()
+			.withName("x")
+			.canBeNull()
+			.withValidators(validatorThrowOnTrue)
+			.build() as BooleanElement;
+
+		test("That is successful parses correctly", () => {
+			const parser: ConfigParser = getParserWithRootAndChildren(booleanElement);
+			const result: Result = parser.parse("{\"x\": true}") as Result;
+			expect(result.x).toBe(true);
+		});
+
+		test("That throws an error stores that error", () => {
+			const parser: ConfigParser = getParserWithRootAndChildren(
+				booleanElementTestError
+			);
+
+			expect(() => parser.parse("{\"x\": true}"))
+				.toThrow(ConfigParseFailureError);
+			expect(getErrorsOfType(parser, TestError)).toHaveLength(1);
+		});
+
+		test("That throws an error stores that error", () => {
+			const parser: ConfigParser = getParserWithRootAndChildren(booleanElement);
+			expect(() => parser.parse("{\"x\": false}"))
+				.toThrow(ConfigParseFailureError);
+			expect(getErrorsOfType(parser, ValidationError)).toHaveLength(1);
+		});
+	});
+
 });
 
 describe("Config with a single object", () => {
@@ -600,6 +734,52 @@ describe("Config with a single object", () => {
 			
 		});
 	});
+
+	describe("With a custom validator", () => {
+		type Result = {obj: {x: number}};
+
+		const validator: ElementValidator<object> = {
+			validate: (ce: ConfigElement, val: object) => {
+				const obj = val as {x: number};
+				if (obj.x === 1)
+					throw new TestError("Test");
+			
+				return obj.x === 0;
+			}
+		};
+
+		const objectElement: ObjectElement = new ConfigElementBuilder()
+			.ofTypeObject()
+			.withName("obj")
+			.withChildElements(
+				new ConfigElementBuilder().ofTypeNumber().withName("x").build()
+			)
+			.withValidators(validator)
+			.build() as ObjectElement;
+
+
+		test("That is successful parses correctly", () => {
+			const parser: ConfigParser = getParserWithRootAndChildren(objectElement);
+			const result: Result = parser.parse(JSON.stringify({obj: {x:0}})) as Result;
+			expect(result.obj.x).toBe(0);
+		});
+
+
+		test("That throws an error stores that error", () => {
+			const parser: ConfigParser = getParserWithRootAndChildren(objectElement);
+			expect(() => parser.parse(JSON.stringify({obj: {x:1}})))
+				.toThrow(ConfigParseFailureError);
+			expect(getErrorsOfType(parser, TestError)).toHaveLength(1);
+		});
+
+		test("That throws an error stores that error", () => {
+			const parser: ConfigParser = getParserWithRootAndChildren(objectElement);
+			expect(() => parser.parse(JSON.stringify({obj: {x:2}})))
+				.toThrow(ConfigParseFailureError);
+			expect(getErrorsOfType(parser, ValidationError)).toHaveLength(1);
+		});
+	});
+
 });
 
 describe("Config with a single array", () => {
@@ -973,6 +1153,55 @@ describe("Config with a single array", () => {
 		expect(result.arr[1]).toBe("2");
 		expect(result.arr[2]).toBe(true);
 		// TODO: (Mischa Reitsma) Maybe assert last 2 as well
+	});
+
+	describe.each<boolean>([true, false])(
+		"with custom validator and allow any element is $s", (allowAny) => {
+
+		type Result = {arr: number[]};
+
+		const validator: ElementValidator<object> = {
+			validate: (ce: ConfigElement, val: object) => {
+				const arr = val as number[];
+				if (arr.length === 0)
+					throw new TestError("Test");
+			
+				return arr.length === 1;
+			}
+		};
+
+		function getNewArrayElement(): ArrayElement {
+			const builder: ConfigElementBuilder = new ConfigElementBuilder();
+			builder.ofTypeArray().withName("arr").withValidators(validator);
+
+			if (!allowAny) builder.withNumberArrayElements();
+			return builder.build() as ArrayElement;
+		}
+
+		const arrayElement: ArrayElement = getNewArrayElement();
+
+
+		test("That is successful parses correctly", () => {
+			const parser: ConfigParser = getParserWithRootAndChildren(arrayElement);
+			const result: Result = parser.parse(JSON.stringify({arr: [1]})) as Result;
+			expect(result.arr).toHaveLength(1);
+			expect(result.arr[0]).toBe(1);
+		});
+
+
+		test("That throws an error stores that error", () => {
+			const parser: ConfigParser = getParserWithRootAndChildren(arrayElement);
+			expect(() => parser.parse(JSON.stringify({arr: []})))
+				.toThrow(ConfigParseFailureError);
+			expect(getErrorsOfType(parser, TestError)).toHaveLength(1);
+		});
+
+		test("That throws an error stores that error", () => {
+			const parser: ConfigParser = getParserWithRootAndChildren(arrayElement);
+			expect(() => parser.parse(JSON.stringify({arr: [1, 2]})))
+				.toThrow(ConfigParseFailureError);
+			expect(getErrorsOfType(parser, ValidationError)).toHaveLength(1);
+		});
 	});
 });
 

@@ -11,6 +11,7 @@ import {
 	BooleanElement,
 	ConfigElement,
 	ConfigElementType,
+	JSONType,
 	NumberElement,
 	ObjectElement,
 	StringElement
@@ -139,6 +140,21 @@ export class ConfigParser {
 		}
 	}
 
+	private runCustomValidations(ce: ConfigElement, value: JSONType) {
+		ce.getValidators().forEach(validator => {
+			try {
+				if (!validator.validate(ce, value)) {
+					this.addError(
+						new ValidationError("Custom validation failed")
+					);
+				}
+			}
+			catch (err) {
+				this.addError(err as Error);
+			}
+		});
+	}
+
 	private validateObject(inputObject: unknown, ce: ObjectElement) {
 
 		if (inputObject === null) {
@@ -196,6 +212,9 @@ export class ConfigParser {
 			this.validateUnknownElement(jsonElement, childCe);
 		});
 
+		// Custom validators run before potential pruning.
+		this.runCustomValidations(ce, json);
+
 		// All is validated, now prune if no errors are found.
 		if (this.pruneUnknownElements && !this.errors.length) {
 			extraFields.forEach(f => {
@@ -249,6 +268,9 @@ export class ConfigParser {
 			) {
 				this.addError(new NullArrayElementError());
 			}
+
+			this.runCustomValidations(ce, array);
+
 			return;
 		}
 
@@ -296,6 +318,7 @@ export class ConfigParser {
 			});
 		}
 
+		this.runCustomValidations(ce, array);
 	}
 
 	private validateBoolean(inputBool: unknown, ce: BooleanElement) {
@@ -310,6 +333,8 @@ export class ConfigParser {
 			this.addError(new InvalidTypeError(typeof inputBool, "boolean"));
 			return;
 		}
+
+		this.runCustomValidations(ce, inputBool as boolean);
 	}
 
 	private validateNumber(inputNumber: unknown, ce: NumberElement) {
@@ -327,6 +352,8 @@ export class ConfigParser {
 
 		const n = inputNumber as number;
 		this.checkRange(n, ce.getMinValue(), ce.getMaxValue());
+
+		this.runCustomValidations(ce, n);
 	}
 
 	private validateString(inputString: unknown, ce: StringElement) {
@@ -353,6 +380,8 @@ export class ConfigParser {
 		}
 
 		this.checkRange(s.length, ce.getMinLength(), ce.getMaxLength());
+
+		this.runCustomValidations(ce, s);
 	}
 
 	private checkRange(n: number, min: number | undefined, max: number | undefined) {
@@ -426,3 +455,5 @@ export class NullArrayElementError extends InvalidArrayContentsError {
 
 
 export class ConfigParseFailureError extends Error {}
+
+export class ValidationError extends Error {}

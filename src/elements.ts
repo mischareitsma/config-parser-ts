@@ -2,8 +2,17 @@
  * String representations of all the allowed element types.
  */
 export type ConfigElementType = "string" | "number" | "boolean" | "array" | "object";
+export type JSONType = string | number | boolean | object;
 
 type PrimitiveJSONType = string | number | boolean;
+
+/**
+ * Interface that describes the form of the custom validators that can be added to
+ * a ConfigElement.
+ */
+export interface ElementValidator<T> {
+	validate: (configElement: ConfigElement, value: T) => boolean;
+}
 
 /**
  * Configuration Element
@@ -16,6 +25,8 @@ export abstract class ConfigElement {
 	private name: string;
 	private _isRequired: boolean = true;
 	private _canBeNull: boolean = false;
+
+	private validators: ElementValidator<JSONType>[] = [];
 
 	/**
 	 * Flag that indicates this specific element is required in the configuration. The
@@ -79,6 +90,24 @@ export abstract class ConfigElement {
 	 */
 	public getName(): string {
 		return this.name;
+	}
+
+	/**
+	 * Add ElementValidator instances that do custom validations on an element.
+	 * 
+	 * @param validators ElementValidator instances to add to this ConfigElement.
+	 */
+	public addValidators(...validators: ElementValidator<JSONType>[]) {
+		this.validators.push(...validators);
+	}
+
+	/**
+	 * Return an array of all the custom validators that are assigned to this ConfigElement.
+	 * 
+	 * @returns The array of custom validators.
+	 */
+	public getValidators(): ElementValidator<JSONType>[] {
+		return [...this.validators];
 	}
 
 	/**
@@ -181,6 +210,24 @@ export class ObjectElement extends ConfigElement {
 	 */
 	public getRequiredChildren(): string[] {
 		return this.getChildFieldNames().filter(c => this.children.get(c).isRequired());
+	}
+
+	/**
+	 * Add ElementValidator instances that do custom validations on an element.
+	 * 
+	 * @param validators ElementValidator instances to add to this ObjectElement.
+	 */
+	public override addValidators(...validators: ElementValidator<object>[]) {
+		super.addValidators(...validators);
+	}
+
+	/**
+	 * Return an array of all the custom validators that are assigned to this ObjectElement.
+	 * 
+	 * @returns The array of custom validators.
+	 */
+	public override getValidators(): ElementValidator<object>[] {
+		return super.getValidators();
 	}
 
 	/**
@@ -342,6 +389,24 @@ export class ArrayElement extends ConfigElement {
 	}
 
 	/**
+	 * Add ElementValidator instances that do custom validations on an element.
+	 * 
+	 * @param validators ElementValidator instances to add to this ArrayElement.
+	 */
+	public override addValidators(...validators: ElementValidator<object>[]) {
+		super.addValidators(...validators);
+	}
+	
+	/**
+	 * Return an array of all the custom validators that are assigned to this ArrayElement.
+	 * 
+	 * @returns The array of custom validators.
+	 */
+	public override getValidators(): ElementValidator<object>[] {
+		return super.getValidators();
+	}
+
+	/**
 	 * Check if the passed element type is allowed in the current ArrayElement.
 	 * 
 	 * @param elemType The config element type to check
@@ -399,6 +464,23 @@ export abstract class PrimitiveElement extends ConfigElement {
  * Boolean Configuration Element.
  */
 export class BooleanElement extends PrimitiveElement {
+	/**
+	 * Add ElementValidator instances that do custom validations on an element.
+	 * 
+	 * @param validators ElementValidator instances to add to this BooleanElement.
+	 */
+	public override addValidators(...validators: ElementValidator<boolean>[]) {
+		super.addValidators(...validators);
+	}
+	
+	/**
+	 * Return an array of all the custom validators that are assigned to this BooleanElement.
+	 * 
+	 * @returns The array of custom validators.
+	 */
+	public override getValidators(): ElementValidator<boolean>[] {
+		return super.getValidators();
+	}
 
 	/**
 	 * Validate that the passed element is indeed a valid boolean element. An element is
@@ -455,6 +537,24 @@ export class NumberElement extends PrimitiveElement {
 	 */
 	public getMaxValue(): number {
 		return this.maxValue;
+	}
+
+	/**
+	 * Add ElementValidator instances that do custom validations on an element.
+	 * 
+	 * @param validators ElementValidator instances to add to this NumberElement.
+	 */
+	public override addValidators(...validators: ElementValidator<number>[]) {
+		super.addValidators(...validators);
+	}
+	
+	/**
+	 * Return an array of all the custom validators that are assigned to this NumberElement.
+	 * 
+	 * @returns The array of custom validators.
+	 */
+	public override getValidators(): ElementValidator<number>[] {
+		return super.getValidators();
 	}
 
 	/**
@@ -527,6 +627,24 @@ export class StringElement extends PrimitiveElement {
 	 */
 	public getValidValues(): string[] {
 		return [...this.validValues];
+	}
+
+	/**
+	 * Add ElementValidator instances that do custom validations on an element.
+	 * 
+	 * @param validators ElementValidator instances to add to this StringElement.
+	 */
+	public override addValidators(...validators: ElementValidator<string>[]) {
+		super.addValidators(...validators);
+	}
+	
+	/**
+	 * Return an array of all the custom validators that are assigned to this StringElement.
+	 * 
+	 * @returns The array of custom validators.
+	 */
+	public override getValidators(): ElementValidator<string>[] {
+		return super.getValidators();
 	}
 
 	/**
@@ -1035,6 +1153,17 @@ export class ConfigElementBuilder {
 		}
 
 		this.arrayElement.setAllowNullElements();
+		return this;
+	}
+
+	/**
+	 * Add custom validators to the current element.
+	 * 
+	 * @param validators Array of custom validators for the current element.
+	 * @returns The current ConfigElementBuilder instance.
+	 */
+	public withValidators(...validators: ElementValidator<JSONType>[]) {
+		this.getConfigElement().addValidators(...validators);
 		return this;
 	}
 }

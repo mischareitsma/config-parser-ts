@@ -8,6 +8,7 @@ import {
 	BuilderMissingOrInvalidOfTypeError,
 	ConfigElement,
 	ConfigElementBuilder,
+	ElementValidator,
 	InvalidConfigurationElementError,
 	NumberElement,
 	ObjectElement,
@@ -27,6 +28,24 @@ const correctTypeTestInputs: CorrectTypeTestInput[] = [
 	{type: "array", input: [1, 2]},
 	{type: "object", input: {x: 1}}
 ];
+
+// This describe block contains tests on functionality on ConfigElements, and just uses a random
+// type to test.
+describe("Given any kind of element", () => {
+	test("Adding and getting validators", () => {
+		const element: StringElement = new StringElement();
+		element.setName("name");
+		element.addValidators(
+			{validate: (ce: ConfigElement, value: string) => {
+				return ce.getName() === "name" && value === "John";
+			}}
+		);
+
+		const validators: ElementValidator<string>[] = element.getValidators();
+		expect(validators).toHaveLength(1);
+		expect(validators[0].validate(element, "John")).toBe(true);
+	});
+});
 
 describe("Given an object element", () => {
 
@@ -715,5 +734,18 @@ describe("given an element builder", () => {
 		expect(() => {
 			new ConfigElementBuilder().withArrayElementList();
 		}).toThrow(BuilderMissingOrInvalidOfTypeError);
+	});
+
+	test("Calling with validators will add validators", () => {
+		const element: StringElement = new ConfigElementBuilder().ofTypeString()
+			.withName("name").withValidators(
+				{validate: (ce: ConfigElement, value: string) => {
+					return ce.getName() === "name" && value === "John";
+				}}
+			).build() as StringElement;
+	
+		const validators: ElementValidator<string>[] = element.getValidators();
+		expect(validators).toHaveLength(1);
+		expect(validators[0].validate(element, "John")).toBe(true);
 	});
 });
